@@ -1,0 +1,54 @@
+import threading
+import time
+
+class Impresora:
+    def __init__(self, id):
+        self.id = id
+        self.en_uso = True  
+
+    def imprimir(self, documento):
+        print(f"Impresora {self.id} está imprimiendo: {documento}")
+        time.sleep(4)  # Cambiado a 4 según tu indicación
+        print(f"Impresora {self.id} ha terminado de imprimir: {documento}")
+
+class ControladorImpresoras:
+    def __init__(self, num_impresoras):
+        self.impresoras = [Impresora(i) for i in range(num_impresoras)]
+        self.semaforo = threading.Semaphore(num_impresoras)
+        self.lock = threading.Lock()
+
+    def solicitar_impresora(self):
+        self.semaforo.acquire()
+        with self.lock:
+            for impresora in self.impresoras:
+                if not impresora.en_uso:
+                    impresora.en_uso = True
+                    return impresora
+
+    def liberar_impresora(self, impresora):
+        with self.lock:
+            impresora.en_uso = False
+        self.semaforo.release()
+
+def proceso_de_impresion(controlador, documento):
+    impresora = controlador.solicitar_impresora()
+    impresora.imprimir(documento)
+    controlador.liberar_impresora(impresora)
+
+# Ejecución principal
+if __name__ == "__main__":
+    num_impresoras = 3
+    num_procesos = 10
+    controlador = ControladorImpresoras(num_impresoras)
+    documentos = [f"Documento {i+1}" for i in range(num_procesos)]
+
+    hilos = []
+    for documento in documentos:
+        hilo = threading.Thread(target=proceso_de_impresion, args=(controlador, documento))
+        hilos.append(hilo)
+        hilo.start()
+
+    for hilo in hilos:
+        hilo.join()
+
+    print("Todos los procesos de impresión han terminado.")
