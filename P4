@@ -1,16 +1,18 @@
 import threading
 import time
 
+# Clase Impresora
 class Impresora:
     def __init__(self, id):
         self.id = id
-        self.en_uso = True  
+        self.en_uso = False  # Cambiado a False
 
     def imprimir(self, documento):
         print(f"Impresora {self.id} está imprimiendo: {documento}")
-        time.sleep(4)  # Cambiado a 4 según tu indicación
+        time.sleep(4)  # Simula el tiempo de impresión
         print(f"Impresora {self.id} ha terminado de imprimir: {documento}")
 
+# Clase ControladorImpresoras
 class ControladorImpresoras:
     def __init__(self, num_impresoras):
         self.impresoras = [Impresora(i) for i in range(num_impresoras)]
@@ -24,16 +26,21 @@ class ControladorImpresoras:
                 if not impresora.en_uso:
                     impresora.en_uso = True
                     return impresora
+        return None
 
     def liberar_impresora(self, impresora):
         with self.lock:
             impresora.en_uso = False
         self.semaforo.release()
 
+# Función de proceso de impresión
 def proceso_de_impresion(controlador, documento):
     impresora = controlador.solicitar_impresora()
-    impresora.imprimir(documento)
-    controlador.liberar_impresora(impresora)
+    if impresora:
+        impresora.imprimir(documento)
+        controlador.liberar_impresora(impresora)
+    else:
+        print("No se pudo obtener una impresora para el documento:", documento)
 
 # Ejecución principal
 if __name__ == "__main__":
